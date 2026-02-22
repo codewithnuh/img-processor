@@ -3,104 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wasm Image Processor</title>
+    <title>Wasm Studio | Professional Background Removal</title>
     <link rel="stylesheet" href="./src/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen font-sans">
-    <div id="app" class="max-w-6xl mx-auto p-8">
-        <header class="mb-12 text-center">
-            <h1 class="text-5xl font-extrabold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent mb-4">
-                Wasm Image Processor
-            </h1>
-            <p class="text-slate-400">High-performance on-device image manipulation</p>
+<body class="bg-[#0f172a] text-slate-100 min-h-screen font-['Outfit'] antialiased">
+    <!-- Main App Container -->
+    <div id="app" class="h-screen flex flex-col overflow-hidden">
+        <!-- Header -->
+        <header class="h-16 border-b border-slate-800 bg-[#0f172a] flex items-center justify-between px-8 z-50">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                </div>
+                <h1 class="text-xl font-black">Wasm<span class="text-indigo-500">Studio</span></h1>
+            </div>
+            <div class="flex gap-4">
+                <button id="batchProcessBtn" class="hidden px-6 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-full font-bold transition-all shadow-lg active:scale-95 text-sm">
+                    Process All & Download ZIP
+                </button>
+                <button id="clearAllBtn" class="hidden px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-full text-xs font-bold text-slate-400">
+                    Clear Queue
+                </button>
+            </div>
         </header>
 
-        <main class="grid grid-cols-1 lg:grid-cols-[1fr,350px] gap-12">
-            <!-- Canvas Area -->
-            <div class="space-y-6">
-                <div class="relative bg-slate-800 rounded-2xl border-2 border-slate-700 overflow-hidden shadow-2xl flex items-center justify-center min-h-[500px]">
-                    <canvas id="mainCanvas" class="max-w-full h-auto cursor-crosshair"></canvas>
-                    <div id="uploadPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center">
-                        <svg class="w-16 h-16 text-slate-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                        </svg>
-                        <button id="uploadBtn" class="px-6 py-3 bg-blue-600 hover:bg-blue-500 rounded-full font-semibold transition-colors">
-                            Upload Image
-                        </button>
-                        <input type="file" id="fileInput" class="hidden" accept="image/*">
-                    </div>
-                </div>
-
-                <div class="flex justify-between items-center bg-slate-800 p-4 rounded-xl border border-slate-700">
-                    <div id="selectedColor" class="flex items-center gap-3">
-                        <div id="colorPreview" class="w-8 h-8 rounded-full border border-slate-600 bg-transparent"></div>
-                        <span id="rgbLabel" class="font-mono text-sm text-slate-400">#000000</span>
-                    </div>
-                    <div class="flex gap-4">
-                        <button id="resetBtn" class="text-slate-400 hover:text-white transition-colors">Reset</button>
-                        <button id="downloadBtn" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-medium transition-colors">Download</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Controls Sidebar -->
-            <aside class="space-y-8 bg-slate-800/50 p-6 rounded-2xl border border-slate-700 backdrop-blur-xl">
-                <div>
-                    <h2 class="text-lg font-semibold mb-6 flex items-center gap-2">
-                        <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
-                        Background Removal
-                    </h2>
-                    <div class="space-y-4">
-                        <div class="flex justify-between items-center text-sm">
-                            <label class="text-slate-400">Target Color</label>
-                            <input type="color" id="removeColorPicker" value="#00FF00" class="w-8 h-8 rounded bg-transparent cursor-pointer">
-                        </div>
-                        <div class="flex justify-between text-sm">
-                            <label class="text-slate-400">Threshold</label>
-                            <span id="thresholdVal" class="text-blue-400">30</span>
-                        </div>
-                        <input type="range" id="thresholdSlider" min="0" max="255" value="30" class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500">
-                        <button id="removeBgBtn" class="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-semibold transition-all shadow-lg shadow-blue-900/20">
-                            Apply Chroma Key
+        <main class="flex-1 flex overflow-hidden">
+            <!-- Sidebar: Navigation & Queue -->
+            <aside class="w-[340px] border-r border-slate-800 flex flex-col bg-slate-900/20">
+                <div class="p-6">
+                    <h2 class="text-xs font-black uppercase tracking-widest text-slate-500 mb-4">Batch Queue</h2>
+                    <div class="flex items-center justify-between bg-slate-800/40 p-3 rounded-xl border border-slate-800">
+                        <span id="queueCount" class="text-xs font-bold text-slate-400">0 / 50 Images</span>
+                        <button id="addImagesBtn" class="bg-indigo-600 hover:bg-indigo-500 p-1.5 rounded-lg text-white transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" stroke-width="2.5"/></svg>
                         </button>
                     </div>
+                    <input type="file" id="fileInput" class="hidden" accept="image/*" multiple>
                 </div>
 
-                <div class="pt-8 border-t border-slate-700/50">
-                    <h2 class="text-lg font-semibold mb-6 flex items-center gap-2">
-                        <span class="w-2 h-2 bg-emerald-500 rounded-full"></span>
-                        Color Enhancement
-                    </h2>
-                    <div class="space-y-4">
-                        <div class="flex justify-between items-center text-sm">
-                            <label class="text-slate-400">Target Color</label>
-                            <input type="color" id="enhanceColorPicker" value="#000000" class="w-8 h-8 rounded bg-transparent cursor-pointer">
-                        </div>
-                        <div class="flex justify-between text-sm">
-                            <label class="text-slate-400">Range (Threshold)</label>
-                            <span id="enhanceThresholdVal" class="text-emerald-400">40</span>
-                        </div>
-                        <input type="range" id="enhanceThresholdSlider" min="0" max="255" value="40" class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500">
-                        <div class="flex justify-between text-sm">
-                            <label class="text-slate-400">Saturation Boost</label>
-                            <span id="boostVal" class="text-emerald-400">1.2</span>
-                        </div>
-                        <input type="range" id="boostSlider" min="1" max="5" step="0.1" value="1.2" class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500">
-                        <button id="enhanceBtn" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold transition-all shadow-lg shadow-emerald-900/20">
-                            Enhance Selected Color
-                        </button>
-                    </div>
-                </div>
-
-                <div class="pt-8 border-t border-slate-700/50">
-                    <div class="p-4 rounded-xl bg-slate-900/50 text-xs text-slate-500 space-y-2">
-                        <p>• Zero-copy memory sharing</p>
-                        <p>• Wasm Heap allocation (SIMD ready)</p>
-                        <p>• Euclidean distance chroma key</p>
+                <div id="imageQueue" class="flex-1 overflow-y-auto px-6 pb-6 space-y-3 cursor-pointer">
+                    <!-- Cards will be injected here -->
+                    <div id="emptyState" class="h-40 border-2 border-dashed border-slate-800 rounded-3xl flex flex-col items-center justify-center text-slate-600">
+                        <svg class="w-8 h-8 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-width="2"/></svg>
+                        <span class="text-[10px] font-black uppercase">Drop Images</span>
                     </div>
                 </div>
             </aside>
+
+            <!-- Center: Canvas Area -->
+            <section id="dropZone" class="flex-1 bg-slate-950 flex flex-col items-center justify-center relative p-8">
+                <!-- Large Checkerboard Canvas -->
+                <div class="relative max-w-full max-h-full flex items-center justify-center shadow-2xl">
+                    <canvas id="mainCanvas" class="max-w-full max-h-[70vh] rounded-lg shadow-2xl transition-transform cursor-crosshair"></canvas>
+                    
+                    <!-- No Image Overlay -->
+                    <div id="noImageOverlay" class="absolute inset-0 bg-[#0f172a] flex flex-center items-center justify-center text-center p-12">
+                        <div class="max-w-md">
+                            <h2 class="text-3xl font-black mb-4">Ready to start?</h2>
+                            <p class="text-slate-500 text-sm leading-relaxed mb-8">Upload multiple photos to remove backgrounds in bulk. Click anywhere on the image once uploaded to select a background color.</p>
+                            <button onclick="document.getElementById('fileInput').click()" class="px-8 py-3 bg-indigo-600 rounded-2xl font-black shadow-lg shadow-indigo-500/20 hover:scale-105 active:scale-95 transition-all">Upload First Image</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Canvas Footer Stats -->
+                <div class="absolute bottom-10 left-10 flex gap-6 items-center">
+                    <div class="flex flex-col">
+                        <span id="canvasRes" class="text-[10px] font-black text-slate-500 uppercase">Res: ---</span>
+                        <span id="canvasFormat" class="text-[10px] font-black text-indigo-500 uppercase">Fidelity: Original</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Sidebar: Configuration -->
+            <aside class="w-[360px] border-l border-slate-800 bg-[#0f172a] p-8 flex flex-col gap-8">
+                <div class="space-y-6">
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                        <h2 class="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Removal Tool</h2>
+                    </div>
+
+                    <div class="p-6 bg-slate-800/40 rounded-3xl border border-slate-800 space-y-6">
+                        <div class="flex justify-between items-center">
+                            <label class="text-xs font-bold text-slate-500 uppercase">Target Color</label>
+                            <div class="flex items-center gap-3">
+                                <div id="colorPreview" class="w-10 h-10 rounded-xl border border-white/10 shadow-lg relative overflow-hidden">
+                                     <div class="absolute inset-0 opacity-20 bg-[url('./checkerboard.png')]"></div>
+                                </div>
+                                <input type="color" id="removeColorPicker" value="#00FF00" class="w-10 h-10 rounded-xl bg-slate-900 border-none cursor-pointer">
+                            </div>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center text-[10px] font-black uppercase text-slate-600 tracking-widest">
+                                <label>Sensitivity</label>
+                                <span id="thresholdVal" class="text-indigo-400">30</span>
+                            </div>
+                            <input type="range" id="thresholdSlider" min="0" max="255" value="30" class="w-full h-1.5 bg-slate-900 rounded-full appearance-none cursor-pointer accent-indigo-500">
+                        </div>
+
+                        <div class="pt-4 space-y-3">
+                            <button id="applyAllSettingsBtn" class="w-full py-3 bg-slate-100 text-slate-950 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-white transition-all">
+                                Apply to all images
+                            </button>
+                            <button id="removeBgBtn" class="w-full py-4 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-black text-sm shadow-xl shadow-indigo-600/20 transition-all active:translate-y-0.5">
+                                Process Current
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-auto p-4 bg-indigo-500/5 rounded-2xl border border-indigo-500/10">
+                    <p class="text-[10px] font-bold text-indigo-400 leading-relaxed uppercase italic">
+                        "Your original images are never modified. Backgrounds are removed using high-precision Euclidean distance in Wasm."
+                    </p>
+                </div>
+            </aside>
         </main>
+
+        <!-- Progress Modal -->
+        <div id="progressOverlay" class="hidden fixed inset-0 bg-[#0f172a]/95 backdrop-blur-2xl z-[100] items-center justify-center flex-col">
+            <div class="relative w-64 h-64 flex items-center justify-center flex-col">
+                <svg class="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
+                    <circle class="text-slate-800" stroke-width="6" stroke="currentColor" fill="transparent" r="45" cx="50" cy="50"/>
+                    <circle id="progressCircle" class="text-indigo-500 transition-all duration-300" stroke-width="6" stroke-dasharray="283" stroke-dashoffset="283" stroke-linecap="round" stroke="currentColor" fill="transparent" r="45" cx="50" cy="50"/>
+                </svg>
+                <span id="progressPercent" class="text-5xl font-black italic">0%</span>
+                <span id="queueIndex" class="text-[10px] font-bold text-slate-500 uppercase mt-2">Processing 1/1</span>
+            </div>
+            <p id="progressDetail" class="text-indigo-400 font-bold mt-8 text-sm uppercase tracking-widest">engine starting...</p>
+        </div>
     </div>
 
     <script type="module" src="/src/main.ts"></script>

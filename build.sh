@@ -1,0 +1,1 @@
+emcc cpp/processor.cpp -o public/processor.js -s EXPORTED_FUNCTIONS="['_remove_background', '_enhance_color', '_malloc', '_free']" -s EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap']" -s MODULARIZE=1 -s EXPORT_NAME="createModule" --no-entry -O3 -s ALLOW_MEMORY_GROWTH=1
